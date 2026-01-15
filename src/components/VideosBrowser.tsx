@@ -21,7 +21,7 @@ export interface VideosBrowserProps {
 export default function VideosBrowser({onSelect}: VideosBrowserProps) {
   const {assets, isLoading, searchQuery, setSearchQuery, setSort, sort} = useAssets()
   const [page, setPage] = useState<number>(0)
-  const pageLimit = 20
+  const pageLimit = 18
   const pageTotal = Math.floor(assets.length / pageLimit) + 1
   const [editedAsset, setEditedAsset] = useState<VideoDetailsProps['asset'] | null>(null)
   const freshEditedAsset = useMemo(
