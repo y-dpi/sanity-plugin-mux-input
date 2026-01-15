@@ -23,7 +23,7 @@ const useAssetDocuments = createHookFromObservableFactory<
   }
 >(({documentStore, sort, searchQuery}) => {
   const search = createSearchFilter(searchQuery)
-  const filter = [`_type == "mux.videoAsset"`, ...search.filter].filter(Boolean).join(' && ')
+  const filter = [`_type == "mux.videoAsset"`, "defined(playbackId)", ...search.filter].filter(Boolean).join(' && ')
 
   const sortFragment = ASSET_SORT_OPTIONS[sort].groq
   return documentStore.listenQuery(
