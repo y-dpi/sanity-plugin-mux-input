@@ -20,10 +20,12 @@ export function uploadUrl({
   url,
   settings,
   client,
+  assetName,
 }: {
   url: string
   settings: MuxNewAssetSettings
   client: SanityClient
+  assetName?: string
 }) {
   return testUrl(url).pipe(
     switchMap((validUrl) => {
@@ -41,7 +43,7 @@ export function uploadUrl({
 
             const query = {
               muxBody: JSON.stringify(muxBody),
-              filename: validUrl.split('/').slice(-1)[0],
+              filename: (assetName) ? assetName : validUrl.split('/').slice(-1)[0],
             }
 
             const dataset = client.config().dataset
@@ -79,10 +81,12 @@ export function uploadFile({
   settings,
   client,
   file,
+  assetName,
 }: {
   settings: MuxNewAssetSettings
   client: SanityClient
   file: File
+  assetName?: string
 }) {
   return testFile(file).pipe(
     switchMap((fileOptions) => {
@@ -129,7 +133,7 @@ export function uploadFile({
                       if (event.type !== 'success') {
                         return of(event)
                       }
-                      return from(updateAssetDocumentFromUpload(client, uuid)).pipe(
+                      return from(updateAssetDocumentFromUpload(client, uuid, assetName)).pipe(
                         // eslint-disable-next-line max-nested-callbacks
                         mergeMap((doc) => of({...event, asset: doc}))
                       )
@@ -201,7 +205,7 @@ function pollUpload(client: SanityClient, uuid: string): Promise<UploadResponse>
   })
 }
 
-async function updateAssetDocumentFromUpload(client: SanityClient, uuid: string) {
+async function updateAssetDocumentFromUpload(client: SanityClient, uuid: string, assetName?: string) {
   let upload: UploadResponse
   let asset: {data: MuxAsset}
   try {
@@ -223,6 +227,7 @@ async function updateAssetDocumentFromUpload(client: SanityClient, uuid: string)
     assetId: asset.data.id,
     playbackId: asset.data.playback_ids[0].id,
     uploadId: upload.data.id,
+    filename: (assetName) ? assetName : undefined,
   }
   return client.createOrReplace(doc).then(() => {
     return doc

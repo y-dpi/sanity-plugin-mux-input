@@ -149,6 +149,14 @@ export interface MuxInputConfig {
    * @defaultValue undefined
    */
   maxAssetDuration?: number
+
+  /**
+   * Whether or not to allow content editors to edit the name of the
+   * asset when uploading a video to Mux.
+   *
+   * @defaultValue false
+   */
+  disableAssetNameConfig?: boolean
 }
 
 export interface PluginConfig extends MuxInputConfig {
@@ -248,7 +256,8 @@ export interface UploadConfig
   text_tracks: UploadTextTrack[]
   signed_policy: boolean
   public_policy: boolean
-}
+  asset_name?: string
+} 
 
 /**
  * Data sent to Mux to create a new asset.

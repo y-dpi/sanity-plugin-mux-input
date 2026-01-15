@@ -189,7 +189,7 @@ export default function Uploader(props: Props) {
    * @param settings The Mux new_asset_settings object to send to Sanity
    * @returns
    */
-  const startUpload = (settings: MuxNewAssetSettings) => {
+  const startUpload = (settings: MuxNewAssetSettings, assetName?: string) => {
     const {stagedUpload} = state
     if (!stagedUpload || uploadRef.current) return
     dispatch({action: 'commitUpload'})
@@ -201,6 +201,7 @@ export default function Uploader(props: Props) {
           client: props.client,
           url: stagedUpload.url,
           settings,
+          assetName: (assetName) ? assetName : undefined,
         })
         break
       case 'file':
@@ -208,6 +209,7 @@ export default function Uploader(props: Props) {
           client: props.client,
           file: stagedUpload.files[0],
           settings,
+          assetName: (assetName) ? assetName : undefined,
         }).pipe(
           takeUntil(
             cancelUploadButton.observable.pipe(
