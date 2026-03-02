@@ -97,6 +97,13 @@ export interface MuxInputConfig {
   defaultDrm?: boolean
 
   /**
+   * Attach an inline copy of an asset's metadata along with its reference.
+   * Please note that this copy can become stale if the asset is edited after upload/selection.
+   * @defaultValue false
+   */
+  inlineAssetMetadata?: boolean
+
+  /**
    * Auto-generate captions for these languages by default.
    * Requires `"video_quality": "plus"`
    *

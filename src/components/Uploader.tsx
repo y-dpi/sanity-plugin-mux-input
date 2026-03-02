@@ -12,6 +12,7 @@ import {type DialogState, type SetDialogState} from '../hooks/useDialogState'
 import {isServerError, isValidUrl} from '../util/asserters'
 import {extractDroppedFiles} from '../util/extractFiles'
 import {hasPlaybackPolicy} from '../util/getPlaybackPolicy'
+import {watchAssetForMetadata} from '../util/watchAssetUpdates'
 import type {
   MuxInputProps,
   MuxNewAssetSettings,
@@ -250,12 +251,17 @@ export default function Uploader(props: Props) {
           case 'success':
             dispatch({action: 'progress', percent: 100})
             uploadingDocumentId.current = null
-            props.onChange(
-              PatchEvent.from([
-                setIfMissing({asset: {}}),
-                set({_type: 'reference', _weak: true, _ref: event.asset._id}, ['asset']),
-              ])
-            )
+            const patches = []
+            patches.push(setIfMissing({asset: {}, _type: 'mux.video'}))
+            patches.push(set({_type: 'reference', _weak: true, _ref: event.asset._id}, ['asset']))
+            if (props.config.inlineAssetMetadata) {
+              patches.push(setIfMissing({data: {}}))
+              patches.push(set({_type: 'metadata', ...(event.asset.data ?? {})}, ['data']))
+            }
+            props.onChange(PatchEvent.from(patches))
+            if (props.config.inlineAssetMetadata) {
+              watchAssetForMetadata(event.asset._id, props);
+            }
             break
           case 'pause':
           case 'resume':
