@@ -1,5 +1,5 @@
 import {DocumentVideoIcon, ErrorOutlineIcon, UploadIcon} from '@sanity/icons'
-import {Box, Button, Card, Dialog, Flex, Label, Radio, Stack, Text} from '@sanity/ui'
+import {Box, Button, Card, Checkbox, Dialog, Flex, Label, Radio, Stack, Text, TextInput} from '@sanity/ui'
 import {uuid} from '@sanity/uuid'
 import LanguagesList from 'iso-639-1'
 import {useEffect, useId, useReducer, useRef, useState} from 'react'
@@ -39,6 +39,7 @@ export type UploadConfigurationStateAction =
   | {action: 'signed_policy'; value: UploadConfig['signed_policy']}
   | {action: 'public_policy'; value: UploadConfig['public_policy']}
   | {action: 'drm_policy'; value: UploadConfig['drm_policy']}
+  | {action: 'asset_name'; value: string}
   | TrackAction
 
 const VIDEO_QUALITY_LEVELS = [
@@ -80,7 +81,7 @@ export default function UploadConfiguration({
   stagedUpload: StagedUpload
   secrets: Secrets
   pluginConfig: PluginConfig
-  startUpload: (settings: MuxNewAssetSettings) => void
+  startUpload: (settings: MuxNewAssetSettings, assetName?: string) => void
   onClose: () => void
 }) {
   const id = useId()
@@ -130,6 +131,8 @@ export default function UploadConfiguration({
           return Object.assign({}, prev, {[action.action]: action.value})
         case 'drm_policy':
           return Object.assign({}, prev, {[action.action]: action.value})
+        case 'asset_name':
+          return Object.assign({}, prev, {[action.action]: action.value})
         // Updating individual tracks
         case 'track': {
           const text_tracks = [...prev.text_tracks]
@@ -171,6 +174,7 @@ export default function UploadConfiguration({
       drm_policy: pluginConfig.defaultDrm && !!secrets.drmConfigId,
       normalize_audio: pluginConfig.normalize_audio,
       text_tracks: autoTextTracks,
+      asset_name: stagedUpload.type === 'file' ? stagedUpload.files[0].name : stagedUpload.url,
     } as UploadConfig
   )
 
@@ -251,10 +255,10 @@ export default function UploadConfiguration({
   // If user-provided config is disabled, begin the upload immediately with
   // the developer-specified values from the schema or config or defaults.
   // This can include auto-generated subtitles!
-  const {disableTextTrackConfig, disableUploadConfig} = pluginConfig
-  const skipConfig = disableTextTrackConfig && disableUploadConfig
+  const {disableTextTrackConfig, disableUploadConfig, disableAssetNameConfig} = pluginConfig
+  const skipConfig = disableTextTrackConfig && disableUploadConfig && disableAssetNameConfig
   useEffect(() => {
-    if (skipConfig) startUpload(formatUploadConfig(config, secrets))
+    if (skipConfig) startUpload(formatUploadConfig(config, secrets), config.asset_name)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   if (skipConfig) return null
@@ -332,6 +336,24 @@ export default function UploadConfiguration({
             </Stack>
           </Flex>
         </Card>
+
+        {!disableAssetNameConfig && (
+          <FormField
+            title="Asset Name"
+            inputId={"upload-config-set-asset-name"}
+            description="Give a friendly name to your asset. This name will be displayed in the asset library on Sanity."
+          >
+            <TextInput
+              id={"upload-config-set-asset-name"}
+              value={config.asset_name ?? ""}
+              placeholder="[Notion ID] - Name of the asset (recommended format)"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                dispatch({action: "asset_name", value: e.currentTarget.value})
+              }
+            />
+          </FormField>
+        )}
+
         {!disableUploadConfig && (
           <Stack space={3} paddingBottom={2}>
             <FormField
@@ -415,7 +437,7 @@ export default function UploadConfiguration({
             tone="positive"
             onClick={() => {
               if (!validationError) {
-                startUpload(formatUploadConfig(config, secrets))
+                startUpload(formatUploadConfig(config, secrets), config.asset_name)
               }
             }}
           />

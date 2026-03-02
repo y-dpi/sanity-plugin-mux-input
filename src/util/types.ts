@@ -188,6 +188,14 @@ export interface MuxInputConfig {
    * ```
    */
   hlsConfig?: MuxPlayerElement['_hlsConfig']
+
+  /**
+   * Whether or not to allow content editors to edit the name of the
+   * asset when uploading a video to Mux.
+   *
+   * @defaultValue false
+   */
+  disableAssetNameConfig?: boolean
 }
 
 export interface PluginConfig extends MuxInputConfig {
@@ -288,7 +296,8 @@ export interface UploadConfig
   signed_policy: boolean
   public_policy: boolean
   drm_policy: boolean
-}
+  asset_name?: string
+} 
 
 /**
  * Data sent to Mux to create a new asset.
