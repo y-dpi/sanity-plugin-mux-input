@@ -1,0 +1,359 @@
+import type MuxPlayerElement from '@mux/mux-player'
+import type {PartialDeep} from 'type-fest'
+import {Plugin as Plugin_2} from 'sanity'
+
+export declare const defaultConfig: PluginConfig
+
+declare interface MuxAsset {
+  id: string
+  /** In seconds (instead of JS's default milliseconds) */
+  created_at: string
+  status: 'preparing' | 'ready' | 'errored'
+  duration: number
+  max_stored_resolution: 'Audio only' | 'SD' | 'HD' | 'FHD' | 'UHD'
+  max_stored_frame_rate: -1 | number
+  aspect_ratio: `${number}:${number}`
+  playback_ids: MuxPlaybackId[]
+  tracks: MuxTrack[]
+  errors?: MuxErrors
+  upload_id: string
+  is_live?: boolean
+  passthrough: string
+  live_stream_id?: string
+  master?: {
+    status: 'ready' | 'preparing' | 'errored'
+    url: string
+  }
+  master_access: 'temporary' | 'none'
+  mp4_support: 'standard' | 'none'
+  source_asset_id?: string
+  normalize_audio?: boolean
+  static_renditions?: {
+    status: 'ready' | 'preparing' | 'disabled' | 'errored'
+    files: {
+      name: string
+      ext: 'mp4' | 'm4a'
+      height: number
+      width: number
+      bitrate: number
+      filesize: string
+      type: 'standard' | 'advanced'
+      status: 'ready' | 'preparing' | 'skipped' | 'errored'
+      resolution_tier?: string
+      resolution?: string
+      id: string
+      passthrough?: string
+    }[]
+  }
+  recording_times?: {
+    started_at: string
+    duration: number
+    type: 'content' | 'slate'
+  }[]
+  non_standard_input_reasons?: {
+    video_codec?: string
+    audio_codec?: string
+    video_gop_size?: 'high'
+    video_frame_rate?: string
+    video_resolution?: string
+    video_bitrate?: 'high'
+    pixel_aspect_ratio?: string
+    video_edit_list?: 'non-standard'
+    audio_edit_list?: 'non-standard'
+    unexpected_media_file_parameters?: 'non-standard'
+    test?: boolean
+  }
+  meta?: {
+    title?: string
+  }
+}
+
+declare interface MuxAudioTrack {
+  type: 'audio'
+  id: string
+  duration?: number
+  max_channels: number
+  max_channel_layout: 'stereo' | string
+}
+
+declare interface MuxErrors {
+  type: string
+  messages: string[]
+}
+
+export declare const muxInput: Plugin_2<void | Partial<PluginConfig>>
+
+declare interface MuxInputConfig {
+  /**
+   * Enable static renditions by default. Can be overwritten on a per-asset basis.
+   * Supports:
+   * - Standard mode: 'highest' (up to 4K MP4) and/or 'audio-only' (M4A)
+   * - Advanced mode: Specific resolutions ('270p', '360p', '480p', '540p', '720p', '1080p', '1440p', '2160p') and/or 'audio-only'
+   *
+   * **Important**: 'highest' cannot be mixed with specific resolutions. If both are provided, only 'highest' will be used.
+   *
+   * @see {@link https://docs.mux.com/guides/video/enable-static-mp4-renditions}
+   * @defaultValue []
+   */
+  static_renditions: StaticRenditionResolution[]
+  /**
+   * @deprecated Use `static_renditions` instead. This field is kept for backward compatibility.
+   * Enable static renditions by setting this to 'standard'. Can be overwritten on a per-asset basis.
+   * Requires `"video_quality": "plus"`
+   * @see {@link https://docs.mux.com/guides/video/enable-static-mp4-renditions#why-enable-mp4-support}
+   * @defaultValue 'none'
+   */
+  mp4_support: 'none' | 'standard'
+  /**
+   * Max resolution tier can be used to control the maximum resolution_tier your asset is encoded, stored, and streamed at.
+   * Requires `"video_quality": "plus"`
+   * @see {@link https://docs.mux.com/guides/stream-videos-in-4k}
+   * @defaultValue '1080p'
+   */
+  max_resolution_tier: '2160p' | '1440p' | '1080p'
+  /**
+   * @deprecated Use {@link video_quality}
+   * <br>
+   * The encoding tier informs the cost, quality, and available platform features for the asset.
+   * @see {@link https://docs.mux.com/guides/use-encoding-tiers}
+   * @defaultValue 'smart'
+   */
+  encoding_tier?: 'baseline' | 'smart'
+  /**
+   * The video quality level informs the cost, quality, and available platform features for the asset.
+   * @see {@link https://www.mux.com/docs/guides/use-video-quality-levels}
+   * @defaultValue 'plus'
+   */
+  video_quality: 'basic' | 'plus' | 'premium'
+  /**
+   * Normalize the audio track loudness level.
+   * @see {@link https://docs.mux.com/guides/adjust-audio-levels#how-to-turn-on-audio-normalization}
+   * @defaultValue false
+   */
+  normalize_audio: boolean
+  /**
+   * Enables signed URLs by default, if you configured them with your API token.
+   * @see {@link https://docs.mux.com/guides/secure-video-playback}
+   * @defaultValue false
+   */
+  defaultSigned?: boolean
+  /**
+   * Enables public URLs by default.
+   * @defaultValue true
+   */
+  defaultPublic?: boolean
+  /**
+   * Enables DRM Protection by default, if you configured your DRM Configuration Id.
+   * @see {@link https://www.mux.com/docs/guides/protect-videos-with-drm}
+   * @defaultValue true
+   */
+  defaultDrm?: boolean
+  /**
+   * Attach an inline copy of an asset's metadata along with its reference.
+   * Please note that this copy can become stale if the asset is edited after upload/selection.
+   * @defaultValue false
+   */
+  inlineAssetMetadata?: boolean
+  /**
+   * Auto-generate captions for these languages by default.
+   * Requires `"video_quality": "plus"`
+   *
+   * @see {@link https://docs.mux.com/guides/add-autogenerated-captions-and-use-transcripts}
+   * @deprecated use `defaultAutogeneratedSubtitleLang` instead. Only a single autogenerated
+   */
+  defaultAutogeneratedSubtitleLangs?: SupportedMuxLanguage[]
+  /**
+   * Auto-generate captions for this language by default. Users can still
+   * Requires `"video_quality": "plus"`
+   *
+   * @see {@link https://docs.mux.com/guides/add-autogenerated-captions-and-use-transcripts}
+   */
+  defaultAutogeneratedSubtitleLang?: SupportedMuxLanguage
+  /**
+   * Whether or not to allow content editors to override asset upload
+   * configuration settings when uploading a video to Mux.
+   *
+   * @see {@link https://docs.mux.com/guides/secure-video-playback}
+   * @defaultValue false
+   */
+  disableUploadConfig?: boolean
+  /**
+   * Whether or not to allow content editors to add text tracks alongside their
+   * asset when uploading a video to Mux.
+   *
+   * @see {@link https://docs.mux.com/guides/secure-video-playback}
+   * @defaultValue false
+   */
+  disableTextTrackConfig?: boolean
+  /**
+   * Whether or not to show the playback warning when trying to watch DRM content for the first time.
+   *
+   * @defaultValue false
+   */
+  disableDrmPlaybackWarning?: boolean
+  /**
+     * The mime types that are accepted by the input.
+     *
+     * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/accept}
+     * @defaultValue ['video/*','audio/*']
+
+     */
+  acceptedMimeTypes?: ('audio/*' | 'video/*')[]
+  /**
+   * Maximum file size allowed for video uploads in bytes.
+   * If not specified, no file size validation will be performed.
+   *
+   * @example 1024 * 1024 * 1024 // 1 GB
+   * @defaultValue undefined
+   */
+  maxAssetFileSize?: number
+  /**
+   * Maximum video duration allowed in seconds.
+   * If not specified, no duration validation will be performed.
+   *
+   * @example 2 * 60 * 60 // 2 hours
+   * @defaultValue undefined
+   */
+  maxAssetDuration?: number
+  /**
+   * HLS.js configuration options to be passed to the Mux Player.
+   * These options allow you to customize the underlying HLS.js playback engine behavior.
+   *
+   * @see {@link https://github.com/video-dev/hls.js/blob/master/docs/API.md#fine-tuning}
+   * @defaultValue undefined
+   * @example
+   * ```ts
+   * {
+   *   maxBufferLength: 30,
+   *   lowLatencyMode: true,
+   *   capLevelToPlayerSize: true
+   * }
+   * ```
+   */
+  hlsConfig?: MuxPlayerElement['_hlsConfig']
+  /**
+   * Whether or not to allow content editors to edit the name of the
+   * asset when uploading a video to Mux.
+   *
+   * @defaultValue false
+   */
+  disableAssetNameConfig?: boolean
+}
+
+declare interface MuxPlaybackId {
+  id: string
+  policy: PlaybackPolicy
+}
+
+declare interface MuxTextTrack {
+  type: 'text'
+  id: string
+  text_type?: 'subtitles'
+  text_source?:
+    | 'uploaded'
+    | 'embedded'
+    | 'generated_live'
+    | 'generated_live_final'
+    | 'generated_vod'
+  language_code?: 'en' | 'en-US' | string
+  name?: 'English' | string
+  closed_captions?: boolean
+  passthrough?: string
+  status: 'preparing' | 'ready' | 'errored'
+  error?: {
+    type: string
+    messages?: string[]
+  }
+}
+
+declare type MuxTrack = MuxVideoTrack | MuxAudioTrack | MuxTextTrack
+
+declare interface MuxVideoTrack {
+  type: 'video'
+  id: string
+  max_width: number
+  max_height: number
+  max_frame_rate: -1 | number
+  duration?: number
+}
+
+declare type PlaybackPolicy = 'signed' | 'public' | 'drm'
+
+declare interface PluginConfig extends MuxInputConfig {
+  /**
+   * How the videos browser should appear as a studio tool in Sanity's top navigation
+   *
+   * Pass `false` if you want to disable it.
+   * @defaultValue {title: 'Videos', icon: VideoIcon}
+   **/
+  tool:
+    | false
+    | {
+        title?: string
+        icon?: React.ComponentType
+      }
+  /**
+   * The roles that are allowed to configure the plugin.
+   *
+   * If not set, all roles will be allowed to configure the plugin.
+   * @defaultValue []
+   */
+  allowedRolesForConfiguration: string[]
+}
+
+/**
+ * All static rendition resolution options supported by Mux
+ */
+declare type StaticRenditionResolution =
+  | 'highest'
+  | 'audio-only'
+  | '270p'
+  | '360p'
+  | '480p'
+  | '540p'
+  | '720p'
+  | '1080p'
+  | '1440p'
+  | '2160p'
+
+declare const SUPPORTED_MUX_LANGUAGES_VALUES: (
+  | 'en'
+  | 'es'
+  | 'it'
+  | 'pt'
+  | 'de'
+  | 'fr'
+  | 'pl'
+  | 'ru'
+  | 'nl'
+  | 'ca'
+  | 'tr'
+  | 'sv'
+  | 'uk'
+  | 'no'
+  | 'fi'
+  | 'sk'
+  | 'el'
+  | 'cs'
+  | 'hr'
+  | 'da'
+  | 'ro'
+  | 'bg'
+)[]
+
+declare type SupportedMuxLanguage = (typeof SUPPORTED_MUX_LANGUAGES_VALUES)[number]
+
+export declare interface VideoAssetDocument {
+  _id: string
+  _type: 'mux.videoAsset'
+  _createdAt: string
+  _updatedAt?: string
+  status?: string
+  assetId?: string
+  playbackId?: string
+  filename?: string
+  thumbTime?: number
+  data?: PartialDeep<MuxAsset>
+}
+
+export {}
