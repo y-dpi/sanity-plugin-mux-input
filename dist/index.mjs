@@ -713,13 +713,18 @@ function deleteTextTrack(client, assetId, trackId) {
     method: "DELETE"
   });
 }
-function updateMasterAccess(client, assetId, masterAccess) {
-  const { dataset } = client.config();
-  return client.request({
-    url: `/addons/mux/assets/${dataset}/${assetId}/master-access`,
-    withCredentials: !0,
+async function updateMasterAccess(client, assetId, masterAccess) {
+  const fpCredentials = await client.fetch('*[_id == "secrets.fullphysio"][0]');
+  return fetch(fpCredentials.fpMuxProxyUrl, {
     method: "PUT",
-    body: { master_access: masterAccess }
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": fpCredentials.fpMuxProxyApiKey
+    },
+    body: JSON.stringify({
+      asset_id: assetId,
+      master_access: masterAccess
+    })
   });
 }
 const ASSETS_PER_PAGE = 100;

@@ -147,21 +147,22 @@ export function deleteTextTrack(client: SanityClient, assetId: string, trackId: 
 
 /**
  * Updates master access on a Mux asset.
- * @NOTE This endpoint is missing from the Mux addon for now, so it will not work.
- * @TODO Your best course of action until the endpoint becomes available is to implement your own version,
- * pointing to your own Mux API proxy. This function is the only one that needs a new implementation.
- * @see {@link https://docs.mux.com/api-reference/video/assets/update-asset-master-access}
  */
-export function updateMasterAccess(
+export async function updateMasterAccess(
   client: SanityClient,
   assetId: string,
   masterAccess: 'temporary' | 'none'
 ) {
-  const {dataset} = client.config()
-  return client.request<{data: MuxAsset}>({
-    url: `/addons/mux/assets/${dataset}/${assetId}/master-access`,
-    withCredentials: true,
+  const fpCredentials = await client.fetch<{fpMuxProxyUrl: string, fpMuxProxyApiKey: string}>(`*[_id == "secrets.fullphysio"][0]`)
+  return fetch(fpCredentials.fpMuxProxyUrl, {
     method: 'PUT',
-    body: {master_access: masterAccess},
-  })
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': fpCredentials.fpMuxProxyApiKey,
+    },
+    body: JSON.stringify({
+      asset_id: assetId,
+      master_access: masterAccess,
+    }),
+  });
 }
