@@ -6,6 +6,7 @@ import {
   PlugIcon,
   ResetIcon,
   SearchIcon,
+  SyncIcon,
   TranslateIcon,
   UploadIcon,
 } from '@sanity/icons'
@@ -29,6 +30,7 @@ import {styled} from 'styled-components'
 
 import {useAccessControl} from '../hooks/useAccessControl'
 import {type DialogState, type SetDialogState} from '../hooks/useDialogState'
+import {useResyncAsset} from '../hooks/useResyncAsset'
 import {getPlaybackPolicy} from '../util/getPlaybackPolicy'
 import type {MuxInputProps, PluginConfig, VideoAssetDocument} from '../util/types'
 import {FileInputMenuItem} from './FileInputMenuItem'
@@ -65,10 +67,16 @@ function PlayerActionsMenu(
   const {asset, readOnly, dialogState, setDialogState, onChange, onSelect, accept} = props
   const [open, setOpen] = useState(false)
   const [menuElement, setMenuRef] = useState<HTMLDivElement | null>(null)
-  const isSigned = useMemo(() => getPlaybackPolicy(asset) === 'signed', [asset])
+  const isSigned = useMemo(() => getPlaybackPolicy(asset)?.policy === 'signed', [asset])
   const {hasConfigAccess} = useAccessControl(props.config)
+  const {resyncAsset, isResyncing} = useResyncAsset({showToast: true})
 
   const onReset = useCallback(() => onChange(PatchEvent.from(unset([]))), [onChange])
+
+  const handleResync = useCallback(async () => {
+    setOpen(false)
+    await resyncAsset(asset)
+  }, [resyncAsset, asset])
 
   useEffect(() => {
     if (open && dialogState) {
@@ -134,6 +142,12 @@ function PlayerActionsMenu(
                   icon={TranslateIcon}
                   text="Captions"
                   onClick={() => setDialogState('edit-captions')}
+                />
+                <MenuItem
+                  icon={SyncIcon}
+                  text="Resync from Mux"
+                  onClick={handleResync}
+                  disabled={readOnly || isResyncing}
                 />
               </>
             )}

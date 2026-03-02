@@ -4,8 +4,11 @@ import {useDocumentStore} from 'sanity'
 
 import {useClient} from '../../hooks/useClient'
 import useDocReferences from '../../hooks/useDocReferences'
+import {useResyncAsset} from '../../hooks/useResyncAsset'
 import getVideoMetadata from '../../util/getVideoMetadata'
 import {VideoAssetDocument} from '../../util/types'
+
+type VideoDetailsState = 'idle' | 'saving' | 'deleting' | 'closing' | 'resyncing' | 'downloading'
 
 export interface VideoDetailsProps {
   closeDialog: () => void
@@ -27,7 +30,16 @@ export default function useVideoDetails(props: VideoDetailsProps) {
 
   const displayInfo = getVideoMetadata({...props.asset, filename})
 
-  const [state, setState] = useState<'deleting' | 'downloading' | 'closing' | 'idle' | 'saving'>('idle')
+  const [state, setState] = useState<VideoDetailsState>('idle')
+
+  const {resyncAsset, isResyncing} = useResyncAsset({showToast: true})
+
+  async function handleResync() {
+    if (state !== 'idle') return
+    setState('resyncing')
+    await resyncAsset(props.asset)
+    setState('idle')
+  }
 
   function handleClose() {
     if (state !== 'idle') return
@@ -85,5 +97,7 @@ export default function useVideoDetails(props: VideoDetailsProps) {
     handleClose,
     confirmClose,
     saveChanges,
+    handleResync,
+    isResyncing,
   }
 }
