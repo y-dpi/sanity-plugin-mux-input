@@ -1776,7 +1776,7 @@ async function downloadFile(url, name2 = "untitled", extension = "") {
   }
 }
 function DownloadAssetDialog({ asset, onClose, absolute }) {
-  const client = useClient(), [status, setStatus] = useState("idle"), { setDialogState } = useDialogStateContext(), dialogId = `DownloadAssetDialog${useId()}`, timeout = 120, interval = 2, prepareDownload = async () => {
+  const client = useClient(), [status, setStatus] = useState("idle"), { setDialogState } = useDialogStateContext(), dialogId = `DownloadAssetDialog${useId()}`, timeout = 120, interval = 5, prepareDownload = async () => {
     const assetId = asset.assetId ?? "";
     setStatus("preparing"), enableMasterAccess(client, assetId).then(
       () => {
